@@ -30,6 +30,7 @@ export default function Map() {
         ]
     };
 
+    var coordinates = document.getElementById('coordinates');
 
     useEffect(() => {
         if (map.current) return; //stops map from intializing more than once
@@ -41,21 +42,35 @@ export default function Map() {
         });
 
         // map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
-        new maplibregl.Marker({
+        var marker = new maplibregl.Marker({
             color: "#FFFFFF",
-            // draggable: true
+            draggable: true
         }).setLngLat([lng, lat])
             .addTo(map.current);
 
+        function onDragEnd() {
+            var lngLat = marker.getLngLat();
+            console.log(lngLat)
+        }
+
+        marker.on('dragend', onDragEnd);
+
+        map.current.on('click', function (e) {
+            console.log('A click event has occurred at ' + e.lngLat);
+            var marker = new maplibregl.Marker({
+                color: "#FFFFFF",
+                draggable: true
+            }).setLngLat(e.lngLat)
+                .addTo(map.current);
+        });
     });
 
 
-
-
     return (
-        // <div className="map-wrap">
-        <div ref={mapContainer} className="map" />
-        // </div>/
+        <div className="map-wrap">
+            <div ref={mapContainer} className="map" />
+            <pre id="coordinates" class="coordinates"></pre>
+        </div>
     );
 
 }
