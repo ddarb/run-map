@@ -56,6 +56,13 @@ export default function Map() {
     useEffect(() => {
         markers.forEach(marker => marker.addTo(map.current));
 
+        // Get the last two markers 
+        if (markers.length > 1) {
+            const map1 = markers.slice(-2).map(marker => [marker.getLngLat().lng, marker.getLngLat().lat])
+            console.log(map1)
+        }
+
+
         return () => {
             markers.forEach(marker => marker.remove()); // Cleanup: Remove all markers when markers change
         };
