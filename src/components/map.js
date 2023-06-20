@@ -6,9 +6,9 @@ import './map.css';
 export default function Map() {
     const mapContainer = useRef(null);
     const map = useRef(null);
-    const [lng] = useState(151.7817);
-    const [lat] = useState(-32.9283);
-    const [zoom] = useState(10);
+    const lng = 151.7817;
+    const lat = -32.9283;
+    const zoom = 10;
 
     const mapStyle = {
         "version": 8,
@@ -25,15 +25,16 @@ export default function Map() {
             {
                 "id": "osm",
                 "type": "raster",
-                "source": "osm" // This must match the source key above
+                "source": "osm"
             }
         ]
     };
 
-    var coordinates = document.getElementById('coordinates');
+    const [markers, setMarkers] = useState([]);
 
     useEffect(() => {
-        if (map.current) return; //stops map from intializing more than once
+        if (map.current) return;
+
         map.current = new maplibregl.Map({
             container: mapContainer.current,
             style: mapStyle,
@@ -41,36 +42,44 @@ export default function Map() {
             zoom: zoom
         });
 
-        // map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
-        var marker = new maplibregl.Marker({
-            color: "#FFFFFF",
-            draggable: true
-        }).setLngLat([lng, lat])
-            .addTo(map.current);
-
-        function onDragEnd() {
-            var lngLat = marker.getLngLat();
-            console.log(lngLat)
-        }
-
-        marker.on('dragend', onDragEnd);
+        const initialMarker = createMarker([lng, lat]);
+        setMarkers([initialMarker]);
 
         map.current.on('click', function (e) {
             console.log('A click event has occurred at ' + e.lngLat);
-            var marker = new maplibregl.Marker({
-                color: "#FFFFFF",
-                draggable: true
-            }).setLngLat(e.lngLat)
-                .addTo(map.current);
+            const newMarker = createMarker(e.lngLat);
+            setMarkers(prevMarkers => [...prevMarkers, newMarker]);
         });
-    });
 
+    }, []);
+
+    useEffect(() => {
+        markers.forEach(marker => marker.addTo(map.current));
+
+        return () => {
+            markers.forEach(marker => marker.remove()); // Cleanup: Remove all markers when markers change
+        };
+    }, [markers]);
+
+    function createMarker(lngLat) {
+        const marker = new maplibregl.Marker({
+            color: "#FFFFFF",
+            draggable: true
+        })
+            .setLngLat(lngLat);
+
+        return marker;
+    }
+
+    function handleRemoveMarkers() {
+        setMarkers([]);
+    }
 
     return (
         <div className="map-wrap">
+            <button onClick={handleRemoveMarkers}>Remove Markers</button>
             <div ref={mapContainer} className="map" />
-            <pre id="coordinates" class="coordinates"></pre>
+            <pre id="coordinates" className="coordinates"></pre>
         </div>
     );
-
 }
