@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './map.css';
+import { getRoute, convertRoute } from '../services/RouteService';
 
 export default function Map() {
     const mapContainer = useRef(null);
@@ -31,6 +32,7 @@ export default function Map() {
     };
 
     const [markers, setMarkers] = useState([]);
+    const [routes, setRoutes] = useState([]);
 
     useEffect(() => {
         if (map.current) return;
@@ -58,8 +60,8 @@ export default function Map() {
 
         // Get the last two markers 
         if (markers.length > 1) {
-            const map1 = markers.slice(-2).map(marker => [marker.getLngLat().lng, marker.getLngLat().lat])
-            console.log(map1)
+            const routeCoords = markers.slice(-2).map(marker => [marker.getLngLat().lng, marker.getLngLat().lat])
+            getRoute(routeCoords[0], routeCoords[1]).then(data => { updateRoute(data, true) })
         }
 
 
@@ -80,6 +82,42 @@ export default function Map() {
 
     function handleRemoveMarkers() {
         setMarkers([]);
+        // Clear the lines as well
+        map.current.removeLayer('my-route-layer');
+    }
+
+    function updateRoute(geoJSONData, updateLayers) {
+        if (map.current.getSource('my-route')) {
+            // update source data
+            map.current.getSource("my-route").setData(geoJSONData);
+        } else {
+            // create a new source
+            map.current.addSource("my-route", {
+                "type": "geojson",
+                "data": geoJSONData
+            });
+        }
+
+        if (map.current.getLayer('my-route-layer') || updateLayers) {
+            // remove the previous version of layer
+            if (map.current.getLayer('my-route-layer')) {
+                map.current.removeLayer('my-route-layer');
+            }
+
+            map.current.addLayer({
+                id: 'my-route-layer',
+                source: 'my-route',
+                type: 'line',
+                layout: {
+                    'line-cap': "round",
+                    'line-join': "round"
+                },
+                paint: {
+                    'line-color': "#6084eb",
+                    'line-width': 8
+                }
+            });
+        }
     }
 
     return (
